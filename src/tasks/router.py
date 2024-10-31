@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update, delete
 
-from database import get_async_session
-from models import task
+from ..database import get_async_session
+from .models import task
 
-from schemas import TaskModel
+from .schemas import TaskModel
 
 
 router = APIRouter(
@@ -21,38 +21,48 @@ async def get_tasks(session: AsyncSession = Depends(get_async_session)):
     return result.all()
 
 
-# @router.post("/", response_model=TaskModel)
-# async def add_tasks(task: TaskModel):
-#     tasks.append(task)
-#     return task
+@router.post("/")
+async def add_task(new_task: TaskModel, session: AsyncSession = Depends(get_async_session)):
+    try:
+        query = insert(task).values(**new_task.dict())
+        await session.execute(query)
+        await session.commit()
+        return {
+            "status": "success",
+            "task added !": task
+        }
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to add task")
 
 
-# @router.put("/{task_id}")
-# async def update_task(task_id: int, task_name: str = Query(None), description: str = Query(None)):
-#     try:
-#         current_task = next((i for i, t in enumerate(tasks) if t.id == task_id), None)
+@router.put("/", response_model=TaskModel)
+async def update_task(task_id: int, task_name: str = Query(None), description: str = Query(None),
+                      session: AsyncSession = Depends(get_async_session)):
+    try:
+        query = update(task).where(task.c.id == task_id).values(task_name=task_name,
+                                                                description=description)
+        await session.execute(query)
+        await session.commit()
 
-#         if current_task is not None:
-#             tasks[current_task].task_name = task_name
-#             tasks[current_task].description = description
-            
-#             return tasks[current_task]
-#         else:
-#             raise HTTPException(status_code=404, detail="Task not found")
-#     except Exception:
-#         raise HTTPException(status_code=500, detail="Error updating task")
+        return {
+            "status": "success",
+            "message": "Task up to date !",
+            "Update task": task
+        }
+    except Exception:
+        raise HTTPException(status_code=404, detail="Task is not found")
 
+@router.delete("/", response_model=TaskModel)
+async def delete_task(task_id: int, session: AsyncSession = Depends(get_async_session)):
+    try:
+        query = delete(task).where(task.c.id == task_id)
+        await session.execute(query)
+        await session.commit()
 
-# @router.delete("/{task_id}")
-# async def delete_task(task_id: int):
-#     try:
-#         current_task = next((i for i, t in enumerate(tasks) if t.id == task_id), None)
-
-#         if current_task is not None:
-#             del tasks[current_task]
-
-#             return tasks
-#         else:
-#             raise HTTPException(status_code=404, detail="Task not found")
-#     except Exception:
-#         raise HTTPException(status_code=500, detail="Error deleting task")
+        return {
+            "status": "success",
+            "message": "Task deleted successfully !"
+        }
+    except Exception:
+        raise HTTPException(status_code=404, detail="Task not found")
+    

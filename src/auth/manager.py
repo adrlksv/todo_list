@@ -14,7 +14,7 @@ from src.config import SECRET_AUTH
 SECRET = SECRET_AUTH
 
 
-class UserManager(IntegerIDMixin, BaseUserManager[User, uuid.UUID]):
+class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
 

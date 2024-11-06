@@ -9,12 +9,11 @@ from src.database import Base
 
 metadata = MetaData()
 
-
 role = Table(
     "role",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("name", String, nullable=False),
+    Column("name", String, nullable=False, unique=True),
     Column("permissions", JSON)
 )
 
@@ -25,6 +24,7 @@ user = Table(
     Column("email", String, nullable=False),
     Column("username", String, nullable=False),
     Column("registered_at", TIMESTAMP, default=datetime.utcnow),
+    Column("role_id", Integer, ForeignKey(role.c.id)),
     Column("hashed_password", String, nullable=False),
     Column("is_active", Boolean, default=True, nullable=False),
     Column("is_superuser", Boolean, default=False, nullable=False),
@@ -41,3 +41,4 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     is_active: bool = Column(Boolean, default=True, nullable=False)
     is_superuser: bool = Column(Boolean, default=False, nullable=False)
     is_verified: bool = Column(Boolean, default=False, nullable=False)
+

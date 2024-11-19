@@ -1,7 +1,6 @@
-import uuid
 from typing import Optional
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, HTTPException
 from fastapi_users import (BaseUserManager, IntegerIDMixin, exceptions,
                             models, schemas)
 
@@ -29,6 +28,10 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     ) -> models.UP:
         await self.validate_password(user_create.password, user_create)
 
+        existing_user_by_email = await self.user_db.get_by_email(user_create.email)
+        if existing_user_by_email is not None:
+            raise HTTPException(detail="email already exist")
+
         existing_user = await self.user_db.get_by_email(user_create.email)
         if existing_user is not None:
             raise exceptions.UserAlreadyExists()
@@ -40,7 +43,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         )
         password = user_dict.pop("password")
         user_dict["hashed_password"] = self.password_helper.hash(password)
-        user_dict["role_id"] = 1
+        user_dict["role_id"] = 2
 
         created_user = await self.user_db.create(user_dict)
 
@@ -51,4 +54,3 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
 
 async def get_user_manager(user_db=Depends(get_user_db)):
     yield UserManager(user_db)
-

@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+import uvicorn
+
 from src.auth.base_config import auth_backend, fastapi_users
 from src.auth.schemas import UserRead, UserCreate
 from src.tasks.router import router as task_router
